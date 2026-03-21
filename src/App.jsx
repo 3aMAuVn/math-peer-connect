@@ -1,13 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
-import { Search, Users, BookOpen, MessageCircle, Filter, PlusCircle } from "lucide-react";
-import { motion } from "framer-motion";
 
 const studentsSeed = [
   {
@@ -57,6 +48,33 @@ const studentsSeed = [
   },
 ];
 
+const groupsSeed = [
+  {
+    id: 1,
+    name: "Year 7 Puzzle Club",
+    level: "Year 7",
+    topic: "Puzzles",
+    members: 12,
+    meeting: "Saturday 10:00 AM",
+  },
+  {
+    id: 2,
+    name: "Year 9 Algebra Circle",
+    level: "Year 9",
+    topic: "Algebra",
+    members: 8,
+    meeting: "Wednesday 4:30 PM",
+  },
+  {
+    id: 3,
+    name: "Year 11 Calculus Crew",
+    level: "Year 11",
+    topic: "Calculus",
+    members: 10,
+    meeting: "Friday 5:00 PM",
+  },
+];
+
 const postsSeed = [
   {
     id: 1,
@@ -81,13 +99,7 @@ const postsSeed = [
   },
 ];
 
-const groupsSeed = [
-  { id: 1, name: "Year 7 Puzzle Club", level: "Year 7", topic: "Puzzles", members: 12, meeting: "Saturday 10:00 AM" },
-  { id: 2, name: "Year 9 Algebra Circle", level: "Year 9", topic: "Algebra", members: 8, meeting: "Wednesday 4:30 PM" },
-  { id: 3, name: "Year 11 Calculus Crew", level: "Year 11", topic: "Calculus", members: 10, meeting: "Friday 5:00 PM" },
-];
-
-const chatSeed = [
+const initialMessages = [
   { id: 1, from: "Mia", text: "Hi! Want to join our Year 9 challenge group?" },
   { id: 2, from: "You", text: "Yes, I like geometry and logic questions." },
   { id: 3, from: "Mia", text: "Great. We meet online every Tuesday." },
@@ -95,13 +107,159 @@ const chatSeed = [
 
 const levels = ["All", "Year 7", "Year 8", "Year 9", "Year 10", "Year 11", "Year 12"];
 
-export default function MathPeerConnectApp() {
-  const [search, setSearch] = useState("");
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "#f8fafc",
+    padding: "24px",
+    fontFamily: "Arial, sans-serif",
+    color: "#0f172a",
+  },
+  container: {
+    maxWidth: "1200px",
+    margin: "0 auto",
+  },
+  hero: {
+    background: "#ffffff",
+    borderRadius: "24px",
+    padding: "32px",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+    marginBottom: "24px",
+  },
+  heroTitle: {
+    fontSize: "36px",
+    fontWeight: "700",
+    marginBottom: "12px",
+  },
+  heroText: {
+    fontSize: "16px",
+    color: "#475569",
+    lineHeight: 1.6,
+  },
+  layout: {
+    display: "grid",
+    gridTemplateColumns: "280px 1fr",
+    gap: "24px",
+  },
+  sidebar: {
+    background: "#ffffff",
+    borderRadius: "20px",
+    padding: "20px",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+    height: "fit-content",
+  },
+  sectionTitle: {
+    fontSize: "20px",
+    fontWeight: "700",
+    marginBottom: "16px",
+  },
+  input: {
+    width: "100%",
+    padding: "12px",
+    borderRadius: "12px",
+    border: "1px solid #cbd5e1",
+    marginBottom: "12px",
+    boxSizing: "border-box",
+  },
+  textarea: {
+    width: "100%",
+    padding: "12px",
+    borderRadius: "12px",
+    border: "1px solid #cbd5e1",
+    marginBottom: "12px",
+    minHeight: "90px",
+    boxSizing: "border-box",
+    resize: "vertical",
+  },
+  tabs: {
+    display: "flex",
+    gap: "8px",
+    marginBottom: "20px",
+    flexWrap: "wrap",
+  },
+  tabButton: (active) => ({
+    padding: "10px 16px",
+    borderRadius: "999px",
+    border: "none",
+    cursor: "pointer",
+    background: active ? "#0f172a" : "#e2e8f0",
+    color: active ? "#ffffff" : "#0f172a",
+    fontWeight: "600",
+  }),
+  levelButton: (active) => ({
+    padding: "8px 12px",
+    borderRadius: "999px",
+    border: "none",
+    cursor: "pointer",
+    margin: "4px",
+    background: active ? "#0f172a" : "#e2e8f0",
+    color: active ? "#ffffff" : "#0f172a",
+  }),
+  cardGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: "16px",
+  },
+  card: {
+    background: "#ffffff",
+    borderRadius: "20px",
+    padding: "20px",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+  },
+  badge: {
+    display: "inline-block",
+    padding: "6px 10px",
+    borderRadius: "999px",
+    background: "#e2e8f0",
+    marginRight: "8px",
+    marginBottom: "8px",
+    fontSize: "12px",
+  },
+  button: {
+    padding: "10px 16px",
+    borderRadius: "12px",
+    border: "none",
+    cursor: "pointer",
+    background: "#0f172a",
+    color: "#ffffff",
+    fontWeight: "600",
+    marginTop: "12px",
+  },
+  secondaryButton: {
+    padding: "10px 16px",
+    borderRadius: "12px",
+    border: "1px solid #cbd5e1",
+    cursor: "pointer",
+    background: "#ffffff",
+    color: "#0f172a",
+    fontWeight: "600",
+    marginTop: "12px",
+  },
+  chatBox: {
+    background: "#ffffff",
+    borderRadius: "20px",
+    padding: "20px",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+  },
+  message: (isYou) => ({
+    maxWidth: "75%",
+    marginLeft: isYou ? "auto" : "0",
+    background: isYou ? "#0f172a" : "#f1f5f9",
+    color: isYou ? "#ffffff" : "#0f172a",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    marginBottom: "10px",
+  }),
+};
+
+export default function App() {
   const [selectedLevel, setSelectedLevel] = useState("All");
-  const [postText, setPostText] = useState("");
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("students");
   const [posts, setPosts] = useState(postsSeed);
-  const [chatMessages, setChatMessages] = useState(chatSeed);
-  const [chatInput, setChatInput] = useState("");
+  const [newPost, setNewPost] = useState("");
+  const [messages, setMessages] = useState(initialMessages);
+  const [newMessage, setNewMessage] = useState("");
   const [profile, setProfile] = useState({
     name: "You",
     level: "Year 9",
@@ -109,334 +267,234 @@ export default function MathPeerConnectApp() {
     goal: "Find two students to study with every week.",
   });
 
-  const currentInterestList = useMemo(
-    () => profile.interests.split(",").map((item) => item.trim()).filter(Boolean),
-    [profile.interests]
-  );
+  const currentInterestList = useMemo(() => {
+    return profile.interests
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }, [profile.interests]);
 
   const filteredStudents = useMemo(() => {
     return studentsSeed
       .filter((student) => {
         const matchesLevel = selectedLevel === "All" || student.level === selectedLevel;
-        const matchesSearch =
-          student.name.toLowerCase().includes(search.toLowerCase()) ||
-          student.interests.join(" ").toLowerCase().includes(search.toLowerCase()) ||
-          student.goal.toLowerCase().includes(search.toLowerCase()) ||
-          student.bio.toLowerCase().includes(search.toLowerCase());
+        const text = `${student.name} ${student.interests.join(" ")} ${student.goal} ${student.bio}`.toLowerCase();
+        const matchesSearch = text.includes(search.toLowerCase());
         return matchesLevel && matchesSearch;
       })
       .map((student) => {
         const shared = student.interests.filter((interest) => currentInterestList.includes(interest));
-        return {
-          ...student,
-          matchScore: shared.length,
-          shared,
-        };
-      })
-      .sort((a, b) => b.matchScore - a.matchScore);
-  }, [search, selectedLevel, currentInterestList]);
+        return { ...student, shared };
+      });
+  }, [selectedLevel, search, currentInterestList]);
 
   const filteredGroups = useMemo(() => {
     return groupsSeed.filter((group) => {
       const matchesLevel = selectedLevel === "All" || group.level === selectedLevel;
-      const matchesSearch =
-        group.name.toLowerCase().includes(search.toLowerCase()) ||
-        group.topic.toLowerCase().includes(search.toLowerCase());
-      return matchesLevel && matchesSearch;
+      const text = `${group.name} ${group.topic}`.toLowerCase();
+      return matchesLevel && text.includes(search.toLowerCase());
     });
-  }, [search, selectedLevel]);
+  }, [selectedLevel, search]);
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
       const matchesLevel = selectedLevel === "All" || post.level === selectedLevel;
-      const matchesSearch =
-        post.text.toLowerCase().includes(search.toLowerCase()) ||
-        post.tags.join(" ").toLowerCase().includes(search.toLowerCase()) ||
-        post.author.toLowerCase().includes(search.toLowerCase());
-      return matchesLevel && matchesSearch;
+      const text = `${post.author} ${post.text} ${post.tags.join(" ")}`.toLowerCase();
+      return matchesLevel && text.includes(search.toLowerCase());
     });
-  }, [posts, search, selectedLevel]);
+  }, [posts, selectedLevel, search]);
 
   const addPost = () => {
-    if (!postText.trim()) return;
-    const newPost = {
+    if (!newPost.trim()) return;
+
+    const post = {
       id: posts.length + 1,
       author: profile.name,
       level: selectedLevel === "All" ? profile.level : selectedLevel,
-      text: postText,
+      text: newPost,
       tags: currentInterestList.length ? [currentInterestList[0]] : ["Study"],
     };
-    setPosts([newPost, ...posts]);
-    setPostText("");
+
+    setPosts([post, ...posts]);
+    setNewPost("");
   };
 
   const sendMessage = () => {
-    if (!chatInput.trim()) return;
-    setChatMessages((prev) => [...prev, { id: prev.length + 1, from: "You", text: chatInput }]);
-    setChatInput("");
-  };
-    setPosts([newPost, ...posts]);
-    setPostText("");
+    if (!newMessage.trim()) return;
+    setMessages([...messages, { id: messages.length + 1, from: "You", text: newMessage }]);
+    setNewMessage("");
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl bg-white p-8 shadow-sm"
-        >
-          <div className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr] lg:items-center">
-            <div className="space-y-4">
-              <Badge className="rounded-full px-3 py-1 text-sm">Math Peer Connect</Badge>
-              <h1 className="text-4xl font-bold tracking-tight text-slate-900">
-                Help students at the same math level find each other, chat, and learn together.
-              </h1>
-              <p className="max-w-2xl text-base text-slate-600">
-                A simple community app where students can match by school year, discover shared math interests,
-                join study groups, and post practice questions.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Button className="rounded-2xl">Get started</Button>
-                <Button variant="outline" className="rounded-2xl">See demo</Button>
+    <div style={styles.page}>
+      <div style={styles.container}>
+        <div style={styles.hero}>
+          <div style={styles.heroTitle}>Math Peer Connect</div>
+          <div style={styles.heroText}>
+            Help students at the same level connect, share their interest in maths, join study groups,
+            and support each other through practice and discussion.
+          </div>
+        </div>
+
+        <div style={styles.layout}>
+          <div>
+            <div style={styles.sidebar}>
+              <div style={styles.sectionTitle}>Filters</div>
+              <input
+                style={styles.input}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search interests or topics"
+              />
+
+              <div style={{ marginBottom: "12px", fontWeight: "600" }}>Math level</div>
+              <div>
+                {levels.map((level) => (
+                  <button
+                    key={level}
+                    style={styles.levelButton(selectedLevel === level)}
+                    onClick={() => setSelectedLevel(level)}
+                  >
+                    {level}
+                  </button>
+                ))}
               </div>
             </div>
-            <Card className="rounded-3xl border-0 shadow-md">
-              <CardHeader>
-                <CardTitle className="text-lg">Quick stats</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-4">
-                <div className="rounded-2xl bg-slate-100 p-4">
-                  <div className="text-2xl font-bold">120</div>
-                  <div className="text-sm text-slate-600">Students</div>
-                </div>
-                <div className="rounded-2xl bg-slate-100 p-4">
-                  <div className="text-2xl font-bold">18</div>
-                  <div className="text-sm text-slate-600">Study groups</div>
-                </div>
-                <div className="rounded-2xl bg-slate-100 p-4">
-                  <div className="text-2xl font-bold">42</div>
-                  <div className="text-sm text-slate-600">Questions shared</div>
-                </div>
-                <div className="rounded-2xl bg-slate-100 p-4">
-                  <div className="text-2xl font-bold">9</div>
-                  <div className="text-sm text-slate-600">Topics</div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </motion.div>
 
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          <div className="space-y-6">
-            <Card className="rounded-3xl border-0 shadow-sm h-fit">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Filter className="h-5 w-5" /> Filters
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search interests, topics..."
-                    className="rounded-2xl pl-9"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-slate-700">Math level</p>
-                  <div className="flex flex-wrap gap-2">
-                    {levels.map((level) => (
-                      <button
-                        key={level}
-                        onClick={() => setSelectedLevel(level)}
-                        className={`rounded-full px-3 py-1 text-sm transition ${
-                          selectedLevel === level
-                            ? "bg-slate-900 text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
-                      >
-                        {level}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-2xl bg-slate-100 p-4 text-sm text-slate-600">
-                  Tip: students can be matched by year level, topic interest, and learning goals.
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-3xl border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg">Your profile</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Input
-                  value={profile.name}
-                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                  placeholder="Your name"
-                  className="rounded-2xl"
-                />
-                <Input
-                  value={profile.level}
-                  onChange={(e) => setProfile({ ...profile, level: e.target.value })}
-                  placeholder="Year level"
-                  className="rounded-2xl"
-                />
-                <Input
-                  value={profile.interests}
-                  onChange={(e) => setProfile({ ...profile, interests: e.target.value })}
-                  placeholder="Interests, separated by commas"
-                  className="rounded-2xl"
-                />
-                <Textarea
-                  value={profile.goal}
-                  onChange={(e) => setProfile({ ...profile, goal: e.target.value })}
-                  placeholder="Your study goal"
-                  className="min-h-[100px] rounded-2xl"
-                />
-              </CardContent>
-            </Card>
+            <div style={{ ...styles.sidebar, marginTop: "20px" }}>
+              <div style={styles.sectionTitle}>Your profile</div>
+              <input
+                style={styles.input}
+                value={profile.name}
+                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                placeholder="Your name"
+              />
+              <input
+                style={styles.input}
+                value={profile.level}
+                onChange={(e) => setProfile({ ...profile, level: e.target.value })}
+                placeholder="Year level"
+              />
+              <input
+                style={styles.input}
+                value={profile.interests}
+                onChange={(e) => setProfile({ ...profile, interests: e.target.value })}
+                placeholder="Interests, separated by commas"
+              />
+              <textarea
+                style={styles.textarea}
+                value={profile.goal}
+                onChange={(e) => setProfile({ ...profile, goal: e.target.value })}
+                placeholder="Your study goal"
+              />
+            </div>
           </div>
 
-          <Tabs defaultValue="students" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-4 rounded-2xl">
-              <TabsTrigger value="students" className="rounded-2xl"><Users className="mr-2 h-4 w-4" /> Students</TabsTrigger>
-              <TabsTrigger value="groups" className="rounded-2xl"><BookOpen className="mr-2 h-4 w-4" /> Groups</TabsTrigger>
-              <TabsTrigger value="feed" className="rounded-2xl"><MessageCircle className="mr-2 h-4 w-4" /> Feed</TabsTrigger>
-              <TabsTrigger value="chat" className="rounded-2xl"><MessageCircle className="mr-2 h-4 w-4" /> Chat</TabsTrigger>
-            </TabsList>
+          <div>
+            <div style={styles.tabs}>
+              <button style={styles.tabButton(activeTab === "students")} onClick={() => setActiveTab("students")}>
+                Students
+              </button>
+              <button style={styles.tabButton(activeTab === "groups")} onClick={() => setActiveTab("groups")}>
+                Groups
+              </button>
+              <button style={styles.tabButton(activeTab === "feed")} onClick={() => setActiveTab("feed")}>
+                Feed
+              </button>
+              <button style={styles.tabButton(activeTab === "chat")} onClick={() => setActiveTab("chat")}>
+                Chat
+              </button>
+            </div>
 
-            <TabsContent value="students" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {filteredStudents.map((student) => (
-                <Card key={student.id} className="rounded-3xl border-0 shadow-sm">
-                  <CardContent className="p-5 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarFallback>{student.name.slice(0, 1)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-semibold text-slate-900">{student.name}</div>
-                        <div className="text-sm text-slate-500">{student.level}</div>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
+            {activeTab === "students" && (
+              <div style={styles.cardGrid}>
+                {filteredStudents.map((student) => (
+                  <div key={student.id} style={styles.card}>
+                    <h3>{student.name}</h3>
+                    <p><strong>{student.level}</strong></p>
+                    <p>{student.goal}</p>
+                    <p>{student.bio}</p>
+                    <p><strong>Available:</strong> {student.availability}</p>
+                    <div style={{ marginTop: "10px" }}>
                       {student.interests.map((interest) => (
-                        <Badge key={interest} variant="secondary" className="rounded-full">{interest}</Badge>
+                        <span key={interest} style={styles.badge}>{interest}</span>
                       ))}
                     </div>
-                    <div className="space-y-2 text-sm text-slate-600">
-                      <p>{student.goal}</p>
-                      <p>{student.bio}</p>
-                      <p><span className="font-medium text-slate-700">Available:</span> {student.availability}</p>
-                    </div>
-                    <div className="space-y-3">
-                      {student.shared.length > 0 && (
-                        <div className="rounded-2xl bg-slate-100 p-3 text-sm text-slate-700">
-                          <span className="font-medium">Shared interests:</span> {student.shared.join(", ")}
-                        </div>
-                      )}
-                      <Button className="w-full rounded-2xl">Connect</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </TabsContent>
-
-            <TabsContent value="groups" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {filteredGroups.map((group) => (
-                <Card key={group.id} className="rounded-3xl border-0 shadow-sm">
-                  <CardContent className="p-5 space-y-4">
-                    <div>
-                      <div className="font-semibold text-slate-900">{group.name}</div>
-                      <div className="text-sm text-slate-500">{group.level}</div>
-                    </div>
-                    <Badge className="rounded-full">{group.topic}</Badge>
-                    <div className="space-y-1 text-sm text-slate-600">
-                      <p>{group.members} members</p>
-                      <p>Next meeting: {group.meeting}</p>
-                    </div>
-                    <Button variant="outline" className="w-full rounded-2xl">Join group</Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </TabsContent>
-
-            <TabsContent value="feed" className="space-y-4">
-              <Card className="rounded-3xl border-0 shadow-sm">
-                <CardContent className="p-5 space-y-3">
-                  <div className="flex items-center gap-2 font-semibold text-slate-900">
-                    <PlusCircle className="h-5 w-5" /> Share a math post
+                    {student.shared.length > 0 && (
+                      <p><strong>Shared interests:</strong> {student.shared.join(", ")}</p>
+                    )}
+                    <button style={styles.button}>Connect</button>
                   </div>
-                  <Textarea
-                    value={postText}
-                    onChange={(e) => setPostText(e.target.value)}
-                    placeholder="Ask a question, invite students to study, or share a math challenge..."
-                    className="min-h-[110px] rounded-2xl"
+                ))}
+              </div>
+            )}
+
+            {activeTab === "groups" && (
+              <div style={styles.cardGrid}>
+                {filteredGroups.map((group) => (
+                  <div key={group.id} style={styles.card}>
+                    <h3>{group.name}</h3>
+                    <p><strong>{group.level}</strong></p>
+                    <p><strong>Topic:</strong> {group.topic}</p>
+                    <p><strong>Members:</strong> {group.members}</p>
+                    <p><strong>Next meeting:</strong> {group.meeting}</p>
+                    <button style={styles.secondaryButton}>Join group</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === "feed" && (
+              <div>
+                <div style={styles.card}>
+                  <h3>Share a math post</h3>
+                  <textarea
+                    style={styles.textarea}
+                    value={newPost}
+                    onChange={(e) => setNewPost(e.target.value)}
+                    placeholder="Ask a question or invite students to study"
                   />
-                  <div className="flex justify-end">
-                    <Button className="rounded-2xl" onClick={addPost}>Post</Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  <button style={styles.button} onClick={addPost}>Post</button>
+                </div>
 
-              {filteredPosts.map((post) => (
-                <Card key={post.id} className="rounded-3xl border-0 shadow-sm">
-                  <CardContent className="p-5 space-y-3">
-                    <div className="flex items-center justify-between">
+                <div style={{ marginTop: "16px" }}>
+                  {filteredPosts.map((post) => (
+                    <div key={post.id} style={{ ...styles.card, marginBottom: "16px" }}>
+                      <h3>{post.author}</h3>
+                      <p><strong>{post.level}</strong></p>
+                      <p>{post.text}</p>
                       <div>
-                        <div className="font-semibold text-slate-900">{post.author}</div>
-                        <div className="text-sm text-slate-500">{post.level}</div>
+                        {post.tags.map((tag) => (
+                          <span key={tag} style={styles.badge}>#{tag}</span>
+                        ))}
                       </div>
-                      <Button variant="ghost" className="rounded-2xl">Reply</Button>
                     </div>
-                    <p className="text-slate-700">{post.text}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {post.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="rounded-full">#{tag}</Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </TabsContent>
+                  ))}
+                </div>
+              </div>
+            )}
 
-            <TabsContent value="chat" className="space-y-4">
-              <Card className="rounded-3xl border-0 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg">Private chat demo</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3 rounded-2xl bg-slate-50 p-4">
-                    {chatMessages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
-                          message.from === "You" ? "ml-auto bg-slate-900 text-white" : "bg-white text-slate-700"
-                        }`}
-                      >
-                        <div className="mb-1 text-xs font-semibold opacity-80">{message.from}</div>
-                        <div>{message.text}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-3">
-                    <Input
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      placeholder="Type a message..."
-                      className="rounded-2xl"
-                    />
-                    <Button className="rounded-2xl" onClick={sendMessage}>Send</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            {activeTab === "chat" && (
+              <div style={styles.chatBox}>
+                <h3>Private chat demo</h3>
+                <div style={{ marginBottom: "16px", marginTop: "16px" }}>
+                  {messages.map((message) => (
+                    <div key={message.id} style={styles.message(message.from === "You")}>
+                      <div style={{ fontSize: "12px", marginBottom: "4px", opacity: 0.8 }}>{message.from}</div>
+                      <div>{message.text}</div>
+                    </div>
+                  ))}
+                </div>
+                <input
+                  style={styles.input}
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message"
+                />
+                <button style={styles.button} onClick={sendMessage}>Send</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
