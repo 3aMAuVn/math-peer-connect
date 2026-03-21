@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 const studentsSeed = [
   {
@@ -48,33 +48,6 @@ const studentsSeed = [
   },
 ];
 
-const groupsSeed = [
-  {
-    id: 1,
-    name: "Year 7 Puzzle Club",
-    level: "Year 7",
-    topic: "Puzzles",
-    members: 12,
-    meeting: "Saturday 10:00 AM",
-  },
-  {
-    id: 2,
-    name: "Year 9 Algebra Circle",
-    level: "Year 9",
-    topic: "Algebra",
-    members: 8,
-    meeting: "Wednesday 4:30 PM",
-  },
-  {
-    id: 3,
-    name: "Year 11 Calculus Crew",
-    level: "Year 11",
-    topic: "Calculus",
-    members: 10,
-    meeting: "Friday 5:00 PM",
-  },
-];
-
 const postsSeed = [
   {
     id: 1,
@@ -96,6 +69,39 @@ const postsSeed = [
     level: "Year 11",
     text: "Looking for someone to revise derivatives with after class.",
     tags: ["Calculus"],
+  },
+];
+
+const groupsSeed = [
+  {
+    id: 1,
+    name: "Year 7 Puzzle Club",
+    level: "Year 7",
+    topic: "Puzzles",
+    members: 12,
+    meeting: "Saturday 10:00 AM",
+    description: "A friendly group for puzzle lovers who enjoy short challenge questions.",
+    posts: ["Welcome to Puzzle Club!", "Bring one favourite puzzle to share this week."],
+  },
+  {
+    id: 2,
+    name: "Year 9 Algebra Circle",
+    level: "Year 9",
+    topic: "Algebra",
+    members: 8,
+    meeting: "Wednesday 4:30 PM",
+    description: "Work through algebra skills together and prepare for tests.",
+    posts: ["This week: simplifying expressions.", "Post one tricky algebra question below."],
+  },
+  {
+    id: 3,
+    name: "Year 11 Calculus Crew",
+    level: "Year 11",
+    topic: "Calculus",
+    members: 10,
+    meeting: "Friday 5:00 PM",
+    description: "Practice derivatives and exam-style questions as a team.",
+    posts: ["Friday focus: derivative rules.", "Share one exam tip before the session."],
   },
 ];
 
@@ -260,12 +266,31 @@ export default function App() {
   const [newPost, setNewPost] = useState("");
   const [messages, setMessages] = useState(initialMessages);
   const [newMessage, setNewMessage] = useState("");
+  const [groups, setGroups] = useState(groupsSeed);
+  const [activeGroupId, setActiveGroupId] = useState(groupsSeed[0].id);
+  const [groupPostText, setGroupPostText] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginMode, setLoginMode] = useState("login");
+  const [authForm, setAuthForm] = useState({ name: "", email: "", password: "" });
   const [profile, setProfile] = useState({
     name: "You",
     level: "Year 9",
     interests: "Geometry, Algebra",
     goal: "Find two students to study with every week.",
   });
+
+  useEffect(() => {
+    const savedUser = window.localStorage.getItem("math-peer-user");
+    if (savedUser) {
+      const parsedUser = JSON.parse(savedUser);
+      setProfile((prev) => ({ ...prev, ...parsedUser }));
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  const activeGroup = useMemo(() => {
+    return groups.find((group) => group.id === activeGroupId) || groups[0];
+  }, [groups, activeGroupId]);
 
   const currentInterestList = useMemo(() => {
     return profile.interests
@@ -289,12 +314,12 @@ export default function App() {
   }, [selectedLevel, search, currentInterestList]);
 
   const filteredGroups = useMemo(() => {
-    return groupsSeed.filter((group) => {
+    return groups.filter((group) => {
       const matchesLevel = selectedLevel === "All" || group.level === selectedLevel;
       const text = `${group.name} ${group.topic}`.toLowerCase();
       return matchesLevel && text.includes(search.toLowerCase());
     });
-  }, [selectedLevel, search]);
+  }, [groups, selectedLevel, search]);
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
@@ -304,12 +329,71 @@ export default function App() {
     });
   }, [posts, selectedLevel, search]);
 
+  const handleAuthSubmit = () => {
+    if (!authForm.email.trim() || !authForm.password.trim()) return;
+
+    const userProfile = {
+      name: authForm.name.trim() || profile.name || "Student",
+      level: profile.level,
+      interests: profile.interests,
+      goal: profile.goal,
+      email: authForm.email.trim(),
+    };
+
+    window.localStorage.setItem("math-peer-user", JSON.stringify(userProfile));
+    setProfile((prev) => ({ ...prev, ...userProfile }));
+    setIsLoggedIn(true);
+    setAuthForm({ name: "", email: "", password: "" });
+  };
+
+  const logout = () => {
+    window.localStorage.removeItem("math-peer-user");
+    setIsLoggedIn(false);
+  };
+
+  const groupIdForStudent = (student) => {
+    if (student.level === "Year 7") return 1;
+    if (student.level === "Year 9") return 2;
+    return 3;
+  };
+
+  const joinGroup = (groupId) => {
+    if (!isLoggedIn) {
+      alert("Please log in first to join a group.");
+      setActiveTab("login");
+      return;
+    }
+
+    setGroups((prev) =>
+      prev.map((group) =>
+        group.id === groupId ? { ...group, members: group.members + 1 } : group
+      )
+    );
+    setActiveGroupId(groupId);
+    setActiveTab("groups");
+  };
+
+  const addGroupPost = () => {
+    if (!groupPostText.trim()) return;
+    setGroups((prev) =>
+      prev.map((group) =>
+        group.id === activeGroupId
+          ? {
+              ...group,
+              posts: [`${profile.name}: ${groupPostText}`, ...group.posts],
+            }
+          : group
+      )
+    );
+    setGroupPostText("");
+  };
+
   const addPost = () => {
     if (!newPost.trim()) return;
 
     const post = {
       id: posts.length + 1,
-      author: profile.name,
+      author: isLoggedIn ? profile.name : "Guest",
       level: selectedLevel === "All" ? profile.level : selectedLevel,
       text: newPost,
       tags: currentInterestList.length ? [currentInterestList[0]] : ["Study"],
@@ -321,7 +405,8 @@ export default function App() {
 
   const sendMessage = () => {
     if (!newMessage.trim()) return;
-    setMessages([...messages, { id: messages.length + 1, from: "You", text: newMessage }]);
+    const sender = isLoggedIn ? profile.name : "Guest";
+    setMessages([...messages, { id: messages.length + 1, from: sender, text: newMessage }]);
     setNewMessage("");
   };
 
@@ -329,10 +414,27 @@ export default function App() {
     <div style={styles.page}>
       <div style={styles.container}>
         <div style={styles.hero}>
-          <div style={styles.heroTitle}>Math Peer Connect</div>
-          <div style={styles.heroText}>
-            Help students at the same level connect, share their interest in maths, join study groups,
-            and support each other through practice and discussion.
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
+            <div>
+              <div style={styles.heroTitle}>Math Peer Connect</div>
+              <div style={styles.heroText}>
+                Help students at the same level connect, share their interest in maths, join study groups,
+                and support each other through practice and discussion.
+              </div>
+            </div>
+            <div style={{ minWidth: "220px", textAlign: "right" }}>
+              <div style={{ fontWeight: "700", marginBottom: "8px" }}>
+                {isLoggedIn ? `Welcome, ${profile.name}` : "Student login"}
+              </div>
+              <div style={{ color: "#475569", marginBottom: "10px" }}>
+                {isLoggedIn ? "You can now join groups and post updates." : "Log in to join groups and make them active."}
+              </div>
+              {isLoggedIn ? (
+                <button style={styles.secondaryButton} onClick={logout}>Log out</button>
+              ) : (
+                <button style={styles.button} onClick={() => setActiveTab("login")}>Open login</button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -392,18 +494,11 @@ export default function App() {
 
           <div>
             <div style={styles.tabs}>
-              <button style={styles.tabButton(activeTab === "students")} onClick={() => setActiveTab("students")}>
-                Students
-              </button>
-              <button style={styles.tabButton(activeTab === "groups")} onClick={() => setActiveTab("groups")}>
-                Groups
-              </button>
-              <button style={styles.tabButton(activeTab === "feed")} onClick={() => setActiveTab("feed")}>
-                Feed
-              </button>
-              <button style={styles.tabButton(activeTab === "chat")} onClick={() => setActiveTab("chat")}>
-                Chat
-              </button>
+              <button style={styles.tabButton(activeTab === "students")} onClick={() => setActiveTab("students")}>Students</button>
+              <button style={styles.tabButton(activeTab === "groups")} onClick={() => setActiveTab("groups")}>Groups</button>
+              <button style={styles.tabButton(activeTab === "feed")} onClick={() => setActiveTab("feed")}>Feed</button>
+              <button style={styles.tabButton(activeTab === "chat")} onClick={() => setActiveTab("chat")}>Chat</button>
+              <button style={styles.tabButton(activeTab === "login")} onClick={() => setActiveTab("login")}>Login</button>
             </div>
 
             {activeTab === "students" && (
@@ -423,24 +518,49 @@ export default function App() {
                     {student.shared.length > 0 && (
                       <p><strong>Shared interests:</strong> {student.shared.join(", ")}</p>
                     )}
-                    <button style={styles.button}>Connect</button>
+                    <button style={styles.button} onClick={() => joinGroup(groupIdForStudent(student))}>Connect</button>
                   </div>
                 ))}
               </div>
             )}
 
             {activeTab === "groups" && (
-              <div style={styles.cardGrid}>
-                {filteredGroups.map((group) => (
-                  <div key={group.id} style={styles.card}>
-                    <h3>{group.name}</h3>
-                    <p><strong>{group.level}</strong></p>
-                    <p><strong>Topic:</strong> {group.topic}</p>
-                    <p><strong>Members:</strong> {group.members}</p>
-                    <p><strong>Next meeting:</strong> {group.meeting}</p>
-                    <button style={styles.secondaryButton}>Join group</button>
+              <div>
+                <div style={styles.cardGrid}>
+                  {filteredGroups.map((group) => (
+                    <div key={group.id} style={styles.card}>
+                      <h3>{group.name}</h3>
+                      <p><strong>{group.level}</strong></p>
+                      <p><strong>Topic:</strong> {group.topic}</p>
+                      <p>{group.description}</p>
+                      <p><strong>Members:</strong> {group.members}</p>
+                      <p><strong>Next meeting:</strong> {group.meeting}</p>
+                      <button style={styles.secondaryButton} onClick={() => joinGroup(group.id)}>Join group</button>
+                      <button style={{ ...styles.button, marginLeft: "8px" }} onClick={() => setActiveGroupId(group.id)}>Open group</button>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ ...styles.card, marginTop: "20px" }}>
+                  <h3>{activeGroup.name}</h3>
+                  <p><strong>Active room:</strong> {activeGroup.topic} · {activeGroup.meeting}</p>
+                  <p>{activeGroup.description}</p>
+                  <textarea
+                    style={styles.textarea}
+                    value={groupPostText}
+                    onChange={(e) => setGroupPostText(e.target.value)}
+                    placeholder={isLoggedIn ? "Write an update for the group" : "Log in to post in the group"}
+                    disabled={!isLoggedIn}
+                  />
+                  <button style={styles.button} onClick={addGroupPost} disabled={!isLoggedIn}>Post to group</button>
+                  <div style={{ marginTop: "16px" }}>
+                    {activeGroup.posts.map((post, index) => (
+                      <div key={index} style={{ padding: "12px 0", borderBottom: "1px solid #e2e8f0" }}>
+                        {post}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
             )}
 
@@ -479,7 +599,7 @@ export default function App() {
                 <h3>Private chat demo</h3>
                 <div style={{ marginBottom: "16px", marginTop: "16px" }}>
                   {messages.map((message) => (
-                    <div key={message.id} style={styles.message(message.from === "You")}>
+                    <div key={message.id} style={styles.message(message.from === "You" || message.from === profile.name)}>
                       <div style={{ fontSize: "12px", marginBottom: "4px", opacity: 0.8 }}>{message.from}</div>
                       <div>{message.text}</div>
                     </div>
@@ -489,9 +609,48 @@ export default function App() {
                   style={styles.input}
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message"
+                  placeholder={isLoggedIn ? "Type a message" : "Type a guest message"}
                 />
                 <button style={styles.button} onClick={sendMessage}>Send</button>
+              </div>
+            )}
+
+            {activeTab === "login" && (
+              <div style={styles.card}>
+                <h3>{loginMode === "login" ? "Student login" : "Create account"}</h3>
+                <p style={{ color: "#475569" }}>
+                  This version uses simple local login so you can test the app before adding Firebase.
+                </p>
+                {loginMode === "signup" && (
+                  <input
+                    style={styles.input}
+                    value={authForm.name}
+                    onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
+                    placeholder="Your name"
+                  />
+                )}
+                <input
+                  style={styles.input}
+                  value={authForm.email}
+                  onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                  placeholder="Email"
+                />
+                <input
+                  style={styles.input}
+                  type="password"
+                  value={authForm.password}
+                  onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+                  placeholder="Password"
+                />
+                <button style={styles.button} onClick={handleAuthSubmit}>
+                  {loginMode === "login" ? "Log in" : "Create account"}
+                </button>
+                <button
+                  style={{ ...styles.secondaryButton, marginLeft: "8px" }}
+                  onClick={() => setLoginMode(loginMode === "login" ? "signup" : "login")}
+                >
+                  Switch to {loginMode === "login" ? "sign up" : "login"}
+                </button>
               </div>
             )}
           </div>
