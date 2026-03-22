@@ -118,12 +118,14 @@ const practiceData = {
               question: "1/2 + 1/4 = ?",
               answer: "3/4",
               explanation: "Convert to quarters: 1/2 = 2/4, then 2/4 + 1/4 = 3/4.",
+              commonMistake: "Forgetting to use the same denominator before adding.",
             },
             {
               id: 2,
               question: "3/5 - 1/5 = ?",
               answer: "2/5",
               explanation: "The denominator stays 5, so subtract only the numerators.",
+              commonMistake: "Subtracting both numerator and denominator.",
             },
           ],
         },
@@ -135,6 +137,7 @@ const practiceData = {
               question: "Which is greater: 2/3 or 3/5?",
               answer: "2/3",
               explanation: "Compare decimals: 2/3 ≈ 0.667 and 3/5 = 0.6.",
+              commonMistake: "Comparing only the denominators instead of the values.",
             },
           ],
         },
@@ -151,12 +154,14 @@ const practiceData = {
               question: "0.7 + 0.25 = ?",
               answer: "0.95",
               explanation: "Align decimal places before adding.",
+              commonMistake: "Writing 0.7 as 0.70 incorrectly in the working or misaligning decimals.",
             },
             {
               id: 5,
               question: "1.2 - 0.8 = ?",
               answer: "0.4",
               explanation: "Subtract tenths carefully: 12 tenths - 8 tenths = 4 tenths.",
+              commonMistake: "Treating 1.2 and 0.8 as whole numbers without place value.",
             },
           ],
         },
@@ -175,12 +180,14 @@ const practiceData = {
               question: "Simplify: 3x + 2x",
               answer: "5x",
               explanation: "Combine like terms by adding the coefficients.",
+              commonMistake: "Writing 6x^2 instead of combining like terms.",
             },
             {
               id: 7,
               question: "Solve: x + 4 = 11",
               answer: "x = 7",
               explanation: "Subtract 4 from both sides.",
+              commonMistake: "Adding 4 instead of subtracting it.",
             },
           ],
         },
@@ -197,6 +204,7 @@ const practiceData = {
               question: "What is the sum of angles in a triangle?",
               answer: "180°",
               explanation: "The interior angles of any triangle always add to 180°.",
+              commonMistake: "Confusing a triangle with a quadrilateral.",
             },
           ],
         },
@@ -215,12 +223,14 @@ const practiceData = {
               question: "Differentiate: x^2",
               answer: "2x",
               explanation: "Use the power rule: d/dx(x^n) = nx^(n-1).",
+              commonMistake: "Keeping the exponent as 2 after differentiating.",
             },
             {
               id: 10,
               question: "Differentiate: 5x^3",
               answer: "15x^2",
               explanation: "Multiply by the power, then reduce the exponent by 1.",
+              commonMistake: "Forgetting to multiply by the original coefficient 5.",
             },
           ],
         },
@@ -388,6 +398,14 @@ const styles = {
     border: "1px solid #e2e8f0",
     marginBottom: "12px",
   },
+  progressBarOuter: {
+    width: "100%",
+    height: "14px",
+    borderRadius: "999px",
+    background: "#e2e8f0",
+    overflow: "hidden",
+    marginTop: "10px",
+  },
 };
 
 export default function App() {
@@ -415,6 +433,7 @@ export default function App() {
   const [selectedTopicIndex, setSelectedTopicIndex] = useState(0);
   const [selectedSetIndex, setSelectedSetIndex] = useState(0);
   const [visibleAnswers, setVisibleAnswers] = useState({});
+  const [completedQuestions, setCompletedQuestions] = useState({});
 
   useEffect(() => {
     const savedUser = window.localStorage.getItem("math-peer-user");
@@ -439,6 +458,10 @@ export default function App() {
   const activePracticeTopics = useMemo(() => practiceData[practiceLevel] || [], [practiceLevel]);
   const activePracticeTopic = activePracticeTopics[selectedTopicIndex] || activePracticeTopics[0] || null;
   const activePracticeSet = activePracticeTopic?.sets[selectedSetIndex] || activePracticeTopic?.sets[0] || null;
+
+  const totalQuestionsInSet = activePracticeSet?.questions.length || 0;
+  const completedInSet = activePracticeSet?.questions.filter((item) => completedQuestions[item.id]).length || 0;
+  const progressPercent = totalQuestionsInSet ? Math.round((completedInSet / totalQuestionsInSet) * 100) : 0;
 
   const filteredStudents = useMemo(() => {
     return studentsSeed
@@ -559,6 +582,10 @@ export default function App() {
 
   const toggleAnswer = (questionId) => {
     setVisibleAnswers((prev) => ({ ...prev, [questionId]: !prev[questionId] }));
+  };
+
+  const toggleCompleted = (questionId) => {
+    setCompletedQuestions((prev) => ({ ...prev, [questionId]: !prev[questionId] }));
   };
 
   const changePracticeLevel = (level) => {
@@ -795,6 +822,28 @@ export default function App() {
                   <div style={{ ...styles.card, marginTop: "20px" }}>
                     <h3>{practiceLevel} · {activePracticeTopic.topic}</h3>
                     <p><strong>{activePracticeSet.title}</strong></p>
+
+                    <div style={{ marginTop: "16px", padding: "16px", borderRadius: "16px", background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                        <div>
+                          <div style={{ fontWeight: "700" }}>Your progress</div>
+                          <div style={{ color: "#475569" }}>
+                            {completedInSet} of {totalQuestionsInSet} questions completed
+                          </div>
+                        </div>
+                        <div style={{ fontWeight: "700" }}>{progressPercent}%</div>
+                      </div>
+                      <div style={styles.progressBarOuter}>
+                        <div
+                          style={{
+                            width: `${progressPercent}%`,
+                            height: "100%",
+                            background: "#0f172a",
+                          }}
+                        />
+                      </div>
+                    </div>
+
                     <div style={{ marginTop: "10px", marginBottom: "16px" }}>
                       {activePracticeTopic.sets.map((setItem, index) => (
                         <button
@@ -812,7 +861,17 @@ export default function App() {
 
                     {activePracticeSet.questions.map((item) => (
                       <div key={item.id} style={styles.questionCard}>
-                        <div style={{ fontWeight: "700", marginBottom: "8px" }}>Question</div>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                          <div style={{ fontWeight: "700", marginBottom: "8px" }}>Question</div>
+                          <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px" }}>
+                            <input
+                              type="checkbox"
+                              checked={!!completedQuestions[item.id]}
+                              onChange={() => toggleCompleted(item.id)}
+                            />
+                            Mark complete
+                          </label>
+                        </div>
                         <div style={{ marginBottom: "10px" }}>{item.question}</div>
                         <button style={styles.secondaryButton} onClick={() => toggleAnswer(item.id)}>
                           {visibleAnswers[item.id] ? "Hide answer" : "Show answer"}
@@ -821,6 +880,7 @@ export default function App() {
                           <div style={{ marginTop: "12px" }}>
                             <div><strong>Answer:</strong> {item.answer}</div>
                             <div style={{ color: "#475569", marginTop: "6px" }}><strong>How to solve:</strong> {item.explanation}</div>
+                            <div style={{ color: "#475569", marginTop: "6px" }}><strong>Common mistake:</strong> {item.commonMistake}</div>
                           </div>
                         )}
                       </div>
@@ -828,8 +888,12 @@ export default function App() {
 
                     <div style={{ marginTop: "20px", padding: "16px", borderRadius: "16px", background: "#e0f2fe" }}>
                       <div style={{ fontWeight: "700", marginBottom: "8px" }}>Want a personalised study plan?</div>
+                      <div style={{ color: "#0f172a", marginBottom: "8px" }}>
+                        Join the student portal to get guided practice, extra materials, support tailored to your level,
+                        and a clearer picture of your progress.
+                      </div>
                       <div style={{ color: "#0f172a" }}>
-                        Join the student portal to get guided practice, extra materials, and support tailored to your level.
+                        You will also get step-by-step feedback and a progress chart to help you improve faster.
                       </div>
                       <button style={styles.button} onClick={() => setActiveTab("login")}>Get personalised help</button>
                     </div>
