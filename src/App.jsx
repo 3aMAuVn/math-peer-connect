@@ -105,6 +105,130 @@ const groupsSeed = [
   },
 ];
 
+const practiceData = {
+  "Year 7": [
+    {
+      topic: "Fractions",
+      sets: [
+        {
+          title: "Practice Set 1",
+          questions: [
+            {
+              id: 1,
+              question: "1/2 + 1/4 = ?",
+              answer: "3/4",
+              explanation: "Convert to quarters: 1/2 = 2/4, then 2/4 + 1/4 = 3/4.",
+            },
+            {
+              id: 2,
+              question: "3/5 - 1/5 = ?",
+              answer: "2/5",
+              explanation: "The denominator stays 5, so subtract only the numerators.",
+            },
+          ],
+        },
+        {
+          title: "Challenge Set",
+          questions: [
+            {
+              id: 3,
+              question: "Which is greater: 2/3 or 3/5?",
+              answer: "2/3",
+              explanation: "Compare decimals: 2/3 ≈ 0.667 and 3/5 = 0.6.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      topic: "Decimals",
+      sets: [
+        {
+          title: "Practice Set 1",
+          questions: [
+            {
+              id: 4,
+              question: "0.7 + 0.25 = ?",
+              answer: "0.95",
+              explanation: "Align decimal places before adding.",
+            },
+            {
+              id: 5,
+              question: "1.2 - 0.8 = ?",
+              answer: "0.4",
+              explanation: "Subtract tenths carefully: 12 tenths - 8 tenths = 4 tenths.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "Year 9": [
+    {
+      topic: "Algebra",
+      sets: [
+        {
+          title: "Practice Set 1",
+          questions: [
+            {
+              id: 6,
+              question: "Simplify: 3x + 2x",
+              answer: "5x",
+              explanation: "Combine like terms by adding the coefficients.",
+            },
+            {
+              id: 7,
+              question: "Solve: x + 4 = 11",
+              answer: "x = 7",
+              explanation: "Subtract 4 from both sides.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      topic: "Geometry",
+      sets: [
+        {
+          title: "Practice Set 1",
+          questions: [
+            {
+              id: 8,
+              question: "What is the sum of angles in a triangle?",
+              answer: "180°",
+              explanation: "The interior angles of any triangle always add to 180°.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "Year 11": [
+    {
+      topic: "Calculus",
+      sets: [
+        {
+          title: "Practice Set 1",
+          questions: [
+            {
+              id: 9,
+              question: "Differentiate: x^2",
+              answer: "2x",
+              explanation: "Use the power rule: d/dx(x^n) = nx^(n-1).",
+            },
+            {
+              id: 10,
+              question: "Differentiate: 5x^3",
+              answer: "15x^2",
+              explanation: "Multiply by the power, then reduce the exponent by 1.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
 const initialMessages = [
   { id: 1, from: "Mia", text: "Hi! Want to join our Year 9 challenge group?" },
   { id: 2, from: "You", text: "Yes, I like geometry and logic questions." },
@@ -112,6 +236,7 @@ const initialMessages = [
 ];
 
 const levels = ["All", "Year 7", "Year 8", "Year 9", "Year 10", "Year 11", "Year 12"];
+const practiceLevels = ["Year 7", "Year 9", "Year 11"];
 
 const styles = {
   page: {
@@ -256,6 +381,13 @@ const styles = {
     borderRadius: "14px",
     marginBottom: "10px",
   }),
+  questionCard: {
+    padding: "14px",
+    borderRadius: "14px",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    marginBottom: "12px",
+  },
 };
 
 export default function App() {
@@ -272,12 +404,17 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginMode, setLoginMode] = useState("login");
   const [authForm, setAuthForm] = useState({ name: "", email: "", password: "" });
+  const [authMessage, setAuthMessage] = useState("");
   const [profile, setProfile] = useState({
     name: "You",
     level: "Year 9",
     interests: "Geometry, Algebra",
     goal: "Find two students to study with every week.",
   });
+  const [practiceLevel, setPracticeLevel] = useState("Year 7");
+  const [selectedTopicIndex, setSelectedTopicIndex] = useState(0);
+  const [selectedSetIndex, setSelectedSetIndex] = useState(0);
+  const [visibleAnswers, setVisibleAnswers] = useState({});
 
   useEffect(() => {
     const savedUser = window.localStorage.getItem("math-peer-user");
@@ -298,6 +435,10 @@ export default function App() {
       .map((item) => item.trim())
       .filter(Boolean);
   }, [profile.interests]);
+
+  const activePracticeTopics = useMemo(() => practiceData[practiceLevel] || [], [practiceLevel]);
+  const activePracticeTopic = activePracticeTopics[selectedTopicIndex] || activePracticeTopics[0] || null;
+  const activePracticeSet = activePracticeTopic?.sets[selectedSetIndex] || activePracticeTopic?.sets[0] || null;
 
   const filteredStudents = useMemo(() => {
     return studentsSeed
@@ -330,7 +471,10 @@ export default function App() {
   }, [posts, selectedLevel, search]);
 
   const handleAuthSubmit = () => {
-    if (!authForm.email.trim() || !authForm.password.trim()) return;
+    if (!authForm.email.trim() || !authForm.password.trim()) {
+      setAuthMessage("Please enter both email and password.");
+      return;
+    }
 
     const userProfile = {
       name: authForm.name.trim() || profile.name || "Student",
@@ -344,11 +488,14 @@ export default function App() {
     setProfile((prev) => ({ ...prev, ...userProfile }));
     setIsLoggedIn(true);
     setAuthForm({ name: "", email: "", password: "" });
+    setAuthMessage(loginMode === "login" ? "Logged in successfully." : "Account created successfully.");
+    setActiveTab("groups");
   };
 
   const logout = () => {
     window.localStorage.removeItem("math-peer-user");
     setIsLoggedIn(false);
+    setAuthMessage("You have logged out.");
   };
 
   const groupIdForStudent = (student) => {
@@ -359,7 +506,7 @@ export default function App() {
 
   const joinGroup = (groupId) => {
     if (!isLoggedIn) {
-      alert("Please log in first to join a group.");
+      setAuthMessage("Please log in first to join a group.");
       setActiveTab("login");
       return;
     }
@@ -408,6 +555,17 @@ export default function App() {
     const sender = isLoggedIn ? profile.name : "Guest";
     setMessages([...messages, { id: messages.length + 1, from: sender, text: newMessage }]);
     setNewMessage("");
+  };
+
+  const toggleAnswer = (questionId) => {
+    setVisibleAnswers((prev) => ({ ...prev, [questionId]: !prev[questionId] }));
+  };
+
+  const changePracticeLevel = (level) => {
+    setPracticeLevel(level);
+    setSelectedTopicIndex(0);
+    setSelectedSetIndex(0);
+    setVisibleAnswers({});
   };
 
   return (
@@ -497,6 +655,7 @@ export default function App() {
               <button style={styles.tabButton(activeTab === "students")} onClick={() => setActiveTab("students")}>Students</button>
               <button style={styles.tabButton(activeTab === "groups")} onClick={() => setActiveTab("groups")}>Groups</button>
               <button style={styles.tabButton(activeTab === "feed")} onClick={() => setActiveTab("feed")}>Feed</button>
+              <button style={styles.tabButton(activeTab === "practice")} onClick={() => setActiveTab("practice")}>Free Practice</button>
               <button style={styles.tabButton(activeTab === "chat")} onClick={() => setActiveTab("chat")}>Chat</button>
               <button style={styles.tabButton(activeTab === "login")} onClick={() => setActiveTab("login")}>Login</button>
             </div>
@@ -594,6 +753,91 @@ export default function App() {
               </div>
             )}
 
+            {activeTab === "practice" && (
+              <div>
+                <div style={styles.card}>
+                  <h3>Free Math Practice</h3>
+                  <p style={{ color: "#475569" }}>
+                    Choose your year level, pick a topic, and practise with guided answers and explanations.
+                  </p>
+                  <div style={{ marginTop: "12px", marginBottom: "16px" }}>
+                    {practiceLevels.map((level) => (
+                      <button
+                        key={level}
+                        style={styles.levelButton(practiceLevel === level)}
+                        onClick={() => changePracticeLevel(level)}
+                      >
+                        {level}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={styles.cardGrid}>
+                    {activePracticeTopics.map((topic, index) => (
+                      <div key={topic.topic} style={styles.card}>
+                        <h3>{topic.topic}</h3>
+                        <p>{topic.sets.length} practice set{topic.sets.length > 1 ? "s" : ""}</p>
+                        <button
+                          style={styles.button}
+                          onClick={() => {
+                            setSelectedTopicIndex(index);
+                            setSelectedSetIndex(0);
+                            setVisibleAnswers({});
+                          }}
+                        >
+                          Open topic
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {activePracticeTopic && activePracticeSet && (
+                  <div style={{ ...styles.card, marginTop: "20px" }}>
+                    <h3>{practiceLevel} · {activePracticeTopic.topic}</h3>
+                    <p><strong>{activePracticeSet.title}</strong></p>
+                    <div style={{ marginTop: "10px", marginBottom: "16px" }}>
+                      {activePracticeTopic.sets.map((setItem, index) => (
+                        <button
+                          key={setItem.title}
+                          style={styles.levelButton(selectedSetIndex === index)}
+                          onClick={() => {
+                            setSelectedSetIndex(index);
+                            setVisibleAnswers({});
+                          }}
+                        >
+                          {setItem.title}
+                        </button>
+                      ))}
+                    </div>
+
+                    {activePracticeSet.questions.map((item) => (
+                      <div key={item.id} style={styles.questionCard}>
+                        <div style={{ fontWeight: "700", marginBottom: "8px" }}>Question</div>
+                        <div style={{ marginBottom: "10px" }}>{item.question}</div>
+                        <button style={styles.secondaryButton} onClick={() => toggleAnswer(item.id)}>
+                          {visibleAnswers[item.id] ? "Hide answer" : "Show answer"}
+                        </button>
+                        {visibleAnswers[item.id] && (
+                          <div style={{ marginTop: "12px" }}>
+                            <div><strong>Answer:</strong> {item.answer}</div>
+                            <div style={{ color: "#475569", marginTop: "6px" }}><strong>How to solve:</strong> {item.explanation}</div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    <div style={{ marginTop: "20px", padding: "16px", borderRadius: "16px", background: "#e0f2fe" }}>
+                      <div style={{ fontWeight: "700", marginBottom: "8px" }}>Want a personalised study plan?</div>
+                      <div style={{ color: "#0f172a" }}>
+                        Join the student portal to get guided practice, extra materials, and support tailored to your level.
+                      </div>
+                      <button style={styles.button} onClick={() => setActiveTab("login")}>Get personalised help</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {activeTab === "chat" && (
               <div style={styles.chatBox}>
                 <h3>Private chat demo</h3>
@@ -621,6 +865,11 @@ export default function App() {
                 <p style={{ color: "#475569" }}>
                   This version uses simple local login so you can test the app before adding Firebase.
                 </p>
+                {authMessage && (
+                  <div style={{ marginBottom: "12px", padding: "10px 12px", borderRadius: "12px", background: "#e0f2fe", color: "#0f172a" }}>
+                    {authMessage}
+                  </div>
+                )}
                 {loginMode === "signup" && (
                   <input
                     style={styles.input}
@@ -647,7 +896,10 @@ export default function App() {
                 </button>
                 <button
                   style={{ ...styles.secondaryButton, marginLeft: "8px" }}
-                  onClick={() => setLoginMode(loginMode === "login" ? "signup" : "login")}
+                  onClick={() => {
+                    setLoginMode(loginMode === "login" ? "signup" : "login");
+                    setAuthMessage("");
+                  }}
                 >
                   Switch to {loginMode === "login" ? "sign up" : "login"}
                 </button>
