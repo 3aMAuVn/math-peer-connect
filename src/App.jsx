@@ -475,6 +475,7 @@ export default function App() {
   const [groups, setGroups] = useState(groupsSeed);
   const [activeGroupId, setActiveGroupId] = useState(groupsSeed[0].id);
   const [groupPostText, setGroupPostText] = useState("");
+  const [joinedGroupIds, setJoinedGroupIds] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginMode, setLoginMode] = useState("login");
   const [authForm, setAuthForm] = useState({
@@ -624,13 +625,18 @@ export default function App() {
       return;
     }
 
+    if (joinedGroupIds.includes(groupId)) {
+      setActiveGroupId(groupId);
+      setActiveTab("groups");
+      return;
+    }
+
     setGroups((prev) =>
       prev.map((group) =>
-        group.id === groupId
-          ? { ...group, members: group.members + 1 }
-          : group
+        group.id === groupId ? { ...group, members: group.members + 1 } : group
       )
     );
+    setJoinedGroupIds((prev) => [...prev, groupId]);
     setActiveGroupId(groupId);
     setActiveTab("groups");
   };
@@ -732,6 +738,16 @@ export default function App() {
     setTimeout(() => {
       document
         .getElementById("practice-section")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
+
+  const openGroupScreen = (groupId) => {
+    setActiveGroupId(groupId);
+    setActiveTab("groups");
+    setTimeout(() => {
+      document
+        .getElementById("group-room-section")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 50);
   };
@@ -968,11 +984,11 @@ export default function App() {
                         style={styles.secondaryButton}
                         onClick={() => joinGroup(group.id)}
                       >
-                        Join group
+                        {joinedGroupIds.includes(group.id) ? "Joined" : "Join group"}
                       </button>
                       <button
                         style={{ ...styles.button, marginLeft: "8px" }}
-                        onClick={() => setActiveGroupId(group.id)}
+                        onClick={() => openGroupScreen(group.id)}
                       >
                         Open group
                       </button>
@@ -980,8 +996,18 @@ export default function App() {
                   ))}
                 </div>
 
-                <div style={{ ...styles.card, marginTop: "20px" }}>
-                  <h3>{activeGroup.name}</h3>
+                <div
+                  id="group-room-section"
+                  style={{
+                    ...styles.card,
+                    marginTop: "20px",
+                    minHeight: "70vh",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                    <h3 style={{ margin: 0 }}>{activeGroup.name}</h3>
+                    <span style={{ ...styles.badge, margin: 0 }}>Group Room</span>
+                  </div>
                   <p>
                     <strong>Active room:</strong> {activeGroup.topic} ·{" "}
                     {activeGroup.meeting}
@@ -996,7 +1022,16 @@ export default function App() {
                   <button style={styles.button} onClick={addGroupPost}>
                     Post to group
                   </button>
-                  <div style={{ marginTop: "16px" }}>
+                  <div
+                    style={{
+                      marginTop: "16px",
+                      background: "#f8fafc",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "16px",
+                      padding: "12px",
+                      minHeight: "320px",
+                    }}
+                  >
                     {activeGroup.posts.map((post, index) => (
                       <div
                         key={index}
