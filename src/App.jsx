@@ -702,20 +702,91 @@ export default function App() {
             </div>
 
             {activeTab === "students" && (
-              <div style={styles.cardGrid}>
-                {filteredStudents.map((student) => (
-                  <div key={student.id} style={styles.compactStudentCard}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", alignItems: "center" }}>
-                      <strong>{student.name}</strong>
-                      <span style={styles.badge}>{student.level}</span>
+              <div style={{ display: "grid", gap: "16px" }}>
+                <div style={styles.card}>
+                  <h3>Student Profile</h3>
+                  <p style={{ color: "#475569" }}>
+                    This area is private to the student. It shows learning progress, joined activities, and attendance instead of other students' names.
+                  </p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px", marginTop: "12px" }}>
+                    <div style={{ padding: "14px", borderRadius: "14px", background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                      <div style={{ fontSize: "14px", color: "#475569" }}>Student</div>
+                      <div style={{ fontSize: "20px", fontWeight: "700", marginTop: "4px" }}>{currentUserName}</div>
+                      <div style={{ marginTop: "8px" }}><span style={styles.badge}>{profile.level}</span></div>
                     </div>
-                    <div style={{ color: "#475569", fontSize: "14px" }}>{student.goal}</div>
-                    <div style={{ fontSize: "13px", color: "#64748b" }}>Available: {student.availability}</div>
-                    <div>{student.interests.slice(0, 3).map((interest) => <span key={interest} style={styles.badge}>{interest}</span>)}</div>
-                    {student.shared.length > 0 && <div style={{ fontSize: "13px" }}><strong>Shared:</strong> {student.shared.join(", ")}</div>}
-                    <button style={{ ...styles.button, marginTop: "4px" }} onClick={() => joinGroup(groupIdForStudent(student))}>Connect</button>
+                    <div style={{ padding: "14px", borderRadius: "14px", background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                      <div style={{ fontSize: "14px", color: "#475569" }}>Activities joined</div>
+                      <div style={{ fontSize: "20px", fontWeight: "700", marginTop: "4px" }}>{joinedGroupIds.length}</div>
+                      <div style={{ fontSize: "13px", color: "#64748b", marginTop: "6px" }}>Math Club rooms and practice activities</div>
+                    </div>
+                    <div style={{ padding: "14px", borderRadius: "14px", background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                      <div style={{ fontSize: "14px", color: "#475569" }}>Attendance</div>
+                      <div style={{ fontSize: "20px", fontWeight: "700", marginTop: "4px" }}>{joinedGroupIds.length > 0 ? "Good" : "Not started"}</div>
+                      <div style={{ fontSize: "13px", color: "#64748b", marginTop: "6px" }}>{joinedGroupIds.length > 0 ? `${joinedGroupIds.length} club activities joined` : "Join a Math Club room to begin"}</div>
+                    </div>
                   </div>
-                ))}
+                </div>
+
+                <div style={styles.card}>
+                  <h3>Progress Chart</h3>
+                  <p style={{ color: "#475569", marginBottom: "12px" }}>
+                    Current practice progress for the selected activity.
+                  </p>
+                  <div style={{ display: "grid", gap: "10px" }}>
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                        <span>Practice completion</span>
+                        <strong>{progressPercent}%</strong>
+                      </div>
+                      <div style={styles.progressBarOuter}>
+                        <div style={{ width: `${progressPercent}%`, height: "100%", background: "#0f172a" }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                        <span>Questions completed</span>
+                        <strong>{completedInSet}/{totalQuestionsInSet || 0}</strong>
+                      </div>
+                      <div style={styles.progressBarOuter}>
+                        <div style={{ width: `${totalQuestionsInSet ? Math.round((completedInSet / totalQuestionsInSet) * 100) : 0}%`, height: "100%", background: "#334155" }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={styles.card}>
+                  <h3>Joined Activities</h3>
+                  {joinedGroupIds.length === 0 ? (
+                    <p style={{ color: "#475569" }}>No activities joined yet. Join Math Club or start a practice topic.</p>
+                  ) : (
+                    <div style={{ display: "grid", gap: "10px" }}>
+                      {groups.filter((group) => joinedGroupIds.includes(group.id)).map((group) => (
+                        <div key={group.id} style={{ padding: "12px 14px", borderRadius: "14px", background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
+                            <strong>{group.name}</strong>
+                            <span style={styles.badge}>{group.meeting}</span>
+                          </div>
+                          <div style={{ color: "#475569", marginTop: "6px" }}>{group.description}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={styles.card}>
+                  <h3>Activity Attendance</h3>
+                  <div style={{ display: "grid", gap: "10px" }}>
+                    {(joinedGroupIds.length === 0 ? [{ id: "none", name: "No attendance yet", meeting: "Join a room to begin", status: "Pending" }] : groups.filter((group) => joinedGroupIds.includes(group.id)).map((group) => ({ id: group.id, name: group.name, meeting: group.meeting, status: "Joined" }))).map((item) => (
+                      <div key={item.id} style={{ display: "flex", justifyContent: "space-between", gap: "10px", alignItems: "center", padding: "12px 14px", borderRadius: "14px", background: "#f8fafc", border: "1px solid #e2e8f0", flexWrap: "wrap" }}>
+                        <div>
+                          <div style={{ fontWeight: "700" }}>{item.name}</div>
+                          <div style={{ color: "#64748b", fontSize: "13px", marginTop: "4px" }}>{item.meeting}</div>
+                        </div>
+                        <span style={styles.badge}>{item.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
