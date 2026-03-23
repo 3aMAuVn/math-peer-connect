@@ -339,6 +339,7 @@ export default function App() {
   const [moderationNote, setModerationNote] = useState("");
   const [mutedUsers, setMutedUsers] = useState([]);
   const [bannedUsers, setBannedUsers] = useState([]);
+  const [adminStudentFilter, setAdminStudentFilter] = useState("");
 
   useEffect(() => {
     const savedUser = window.localStorage.getItem("math-peer-user");
@@ -400,6 +401,44 @@ export default function App() {
       ),
     };
   }, [groups, reports]);
+
+  const adminStudents = useMemo(() => {
+    const joinedGroups = groups.filter((group) => joinedGroupIds.includes(group.id));
+    const currentStudentRecord = {
+      id: "current-student",
+      name: currentUserName,
+      level: profile.level,
+      interests: currentInterestList,
+      goal: profile.goal,
+      joinedActivities: joinedGroups.map((group) => group.name),
+      attendance: joinedGroups.length,
+      progress: progressPercent,
+      muted: mutedUsers.includes(currentUserName),
+      banned: bannedUsers.includes(currentUserName),
+    };
+
+    const seededRecords = studentsSeed.map((student) => ({
+      id: student.id,
+      name: student.name,
+      level: student.level,
+      interests: student.interests,
+      goal: student.goal,
+      joinedActivities: [],
+      attendance: 0,
+      progress: 0,
+      muted: mutedUsers.includes(student.name),
+      banned: bannedUsers.includes(student.name),
+    }));
+
+    const allRecords = [currentStudentRecord, ...seededRecords].filter(
+      (student, index, arr) => index === arr.findIndex((item) => item.name === student.name)
+    );
+
+    return allRecords.filter((student) => {
+      const text = `${student.name} ${student.level} ${student.goal} ${student.interests.join(" ")}`.toLowerCase();
+      return text.includes(adminStudentFilter.toLowerCase());
+    });
+  }, [groups, joinedGroupIds, currentUserName, profile.level, profile.goal, currentInterestList, progressPercent, mutedUsers, bannedUsers, adminStudentFilter]);
 
   const handleAuthSubmit = () => {
     if (!authForm.email.trim() || !authForm.password.trim()) {
@@ -699,6 +738,9 @@ export default function App() {
               <button style={styles.tabButton(activeTab === "practice")} onClick={() => setActiveTab("practice")}>Free Practice</button>
               <button style={styles.tabButton(activeTab === "chat")} onClick={() => setActiveTab("chat")}>Chat</button>
               <button style={styles.tabButton(activeTab === "login")} onClick={() => setActiveTab("login")}>Login</button>
+              {isAdmin && (
+                <button style={styles.tabButton(activeTab === "admin")} onClick={() => setActiveTab("admin")}>Admin</button>
+              )}
             </div>
 
             {activeTab === "students" && (
@@ -1017,6 +1059,122 @@ export default function App() {
                 </div>
                 <input style={styles.input} value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder={isLoggedIn ? "Type a message" : "Type a guest message"} />
                 <button style={styles.button} onClick={sendMessage}>Send</button>
+              </div>
+            )}
+
+            {activeTab === "admin" && isAdmin && (
+              <div style={{ display: "grid", gap: "16px" }}>
+                <div style={styles.card}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                    <div>
+                      <h3 style={{ margin: 0 }}>Admin Dashboard</h3>
+                      <p style={{ color: "#475569", marginTop: "8px" }}>
+                        View student progress, joined activities, attendance, and moderation status.
+                      </p>
+                    </div>
+                    <span style={styles.badge}>Teacher View</span>
+                  </div>
+                </div>
+
+                <div style={styles.cardGrid}>
+                  <div style={styles.card}>
+                    <div style={{ fontSize: "14px", color: "#475569" }}>Students visible</div>
+                    <div style={{ fontSize: "28px", fontWeight: "700", marginTop: "6px" }}>{adminStudents.length}</div>
+                  </div>
+                  <div style={styles.card}>
+                    <div style={{ fontSize: "14px", color: "#475569" }}>Open reports</div>
+                    <div style={{ fontSize: "28px", fontWeight: "700", marginTop: "6px" }}>{moderationSummary.openReports}</div>
+                  </div>
+                  <div style={styles.card}>
+                    <div style={{ fontSize: "14px", color: "#475569" }}>Muted users</div>
+                    <div style={{ fontSize: "28px", fontWeight: "700", marginTop: "6px" }}>{mutedUsers.length}</div>
+                  </div>
+                  <div style={styles.card}>
+                    <div style={{ fontSize: "14px", color: "#475569" }}>Banned users</div>
+                    <div style={{ fontSize: "28px", fontWeight: "700", marginTop: "6px" }}>{bannedUsers.length}</div>
+                  </div>
+                </div>
+
+                <div style={styles.card}>
+                  <h3>Student Records</h3>
+                  <input
+                    style={styles.input}
+                    value={adminStudentFilter}
+                    onChange={(e) => setAdminStudentFilter(e.target.value)}
+                    placeholder="Search by name, level, goal, or interest"
+                  />
+                  <div style={{ display: "grid", gap: "12px" }}>
+                    {adminStudents.map((student) => (
+                      <div key={student.id} style={{ padding: "14px", borderRadius: "14px", background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                          <div>
+                            <div style={{ fontWeight: "700", fontSize: "18px" }}>{student.name}</div>
+                            <div style={{ color: "#64748b", marginTop: "4px" }}>{student.level}</div>
+                          </div>
+                          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                            {student.muted && <span style={styles.badge}>Muted</span>}
+                            {student.banned && <span style={styles.badge}>Banned</span>}
+                            {!student.muted && !student.banned && <span style={styles.badge}>Active</span>}
+                          </div>
+                        </div>
+                        <div style={{ marginTop: "10px", color: "#475569" }}><strong>Goal:</strong> {student.goal}</div>
+                        <div style={{ marginTop: "8px" }}>
+                          {student.interests.map((interest) => (
+                            <span key={interest} style={styles.badge}>{interest}</span>
+                          ))}
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px", marginTop: "12px" }}>
+                          <div style={{ padding: "10px 12px", borderRadius: "12px", background: "#ffffff", border: "1px solid #e2e8f0" }}>
+                            <div style={{ fontSize: "13px", color: "#64748b" }}>Progress</div>
+                            <div style={{ fontWeight: "700", marginTop: "4px" }}>{student.progress}%</div>
+                          </div>
+                          <div style={{ padding: "10px 12px", borderRadius: "12px", background: "#ffffff", border: "1px solid #e2e8f0" }}>
+                            <div style={{ fontSize: "13px", color: "#64748b" }}>Attendance</div>
+                            <div style={{ fontWeight: "700", marginTop: "4px" }}>{student.attendance}</div>
+                          </div>
+                          <div style={{ padding: "10px 12px", borderRadius: "12px", background: "#ffffff", border: "1px solid #e2e8f0" }}>
+                            <div style={{ fontSize: "13px", color: "#64748b" }}>Joined activities</div>
+                            <div style={{ fontWeight: "700", marginTop: "4px" }}>{student.joinedActivities.length}</div>
+                          </div>
+                        </div>
+                        <div style={{ marginTop: "12px" }}>
+                          <strong>Activities:</strong>{" "}
+                          {student.joinedActivities.length > 0 ? student.joinedActivities.join(", ") : "No activities joined yet"}
+                        </div>
+                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "12px" }}>
+                          <button style={styles.secondaryButton} onClick={() => muteStudent(student.name)}>Mute</button>
+                          <button style={styles.dangerButton} onClick={() => banStudent(student.name)}>Ban</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={styles.card}>
+                  <h3>Moderation Queue</h3>
+                  {reports.length === 0 ? (
+                    <p style={{ color: "#475569" }}>No reports yet.</p>
+                  ) : (
+                    <div style={{ display: "grid", gap: "12px" }}>
+                      {reports.map((report) => (
+                        <div key={report.id} style={{ padding: "14px", borderRadius: "14px", background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
+                            <strong>{report.reason}</strong>
+                            <span style={styles.badge}>Status: {report.status}</span>
+                          </div>
+                          <div style={{ marginTop: "8px" }}><strong>Reported by:</strong> {report.reportedBy}</div>
+                          <div style={{ marginTop: "4px" }}><strong>Post author:</strong> {report.postAuthor}</div>
+                          <div style={{ marginTop: "8px", color: "#475569" }}>{report.postText}</div>
+                          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "12px" }}>
+                            {report.status === "open" && <button style={styles.secondaryButton} onClick={() => closeReport(report.id)}>Close report</button>}
+                            <button style={styles.secondaryButton} onClick={() => muteStudent(report.postAuthor)}>Mute author</button>
+                            <button style={styles.dangerButton} onClick={() => banStudent(report.postAuthor)}>Ban author</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
