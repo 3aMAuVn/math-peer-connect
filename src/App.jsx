@@ -322,7 +322,10 @@ export default function App() {
   const [groupPostText, setGroupPostText] = useState("");
   const [joinedGroupIds, setJoinedGroupIds] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(true);
+  const adminEmails = [
+  "magicmathmaster23@gmail.com",
+  "admin@magicmathmaster.com.au"
+];
   const [loginMode, setLoginMode] = useState("login");
   const [authForm, setAuthForm] = useState({ name: "", email: "", password: "" });
   const [authMessage, setAuthMessage] = useState("");
@@ -351,6 +354,7 @@ export default function App() {
   }, []);
 
   const currentUserName = profile.name || "Student";
+  const isAdmin = adminEmails.includes((profile.email || "").toLowerCase());
   const isCurrentUserMuted = mutedUsers.includes(currentUserName);
   const isCurrentUserBanned = bannedUsers.includes(currentUserName);
 
@@ -446,12 +450,14 @@ export default function App() {
       return;
     }
 
+    const normalizedEmail = authForm.email.trim().toLowerCase();
     const userProfile = {
       name: authForm.name.trim() || profile.name || "Student",
       level: profile.level,
       interests: profile.interests,
       goal: profile.goal,
-      email: authForm.email.trim(),
+      email: normalizedEmail,
+      role: adminEmails.includes(normalizedEmail) ? "admin" : "student",
     };
 
     if (bannedUsers.includes(userProfile.name)) {
